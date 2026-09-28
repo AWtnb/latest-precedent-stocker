@@ -77,17 +77,23 @@ const getDateRange = () => {
   return { fromDate, toDate };
 };
 
+/** 令和の開始日 */
+const REIWA_START = new Date(2019, 4, 1); // 月は0始まり
+
 /**
  * DateオブジェクトをURLパラメータ用の和暦オブジェクトに変換する
+ * 現状は令和のみ対応（2019年5月1日以降を前提）
  * @param {Date} date
  * @returns {{ gengo: string, year: number, month: number, day: number }}
  */
 const dateToWareki = (date) => {
-  const formatted = Utilities.formatDate(date, "Asia/Tokyo", "GGGGyy/MM/dd");
-  const [gengoYear, month, day] = formatted.split("/");
-  const gengo = gengoYear.slice(0, 2);
-  const year = parseInt(gengoYear.slice(2), 10);
-  return { gengo, year, month: parseInt(month, 10), day: parseInt(day, 10) };
+  const reiwaYear = date.getFullYear() - REIWA_START.getFullYear() + 1;
+  return {
+    gengo: "令和",
+    year: reiwaYear,
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  };
 };
 
 // =====================
@@ -146,6 +152,8 @@ const fetchTotalCount = (html) => {
 
 /**
  * 検索結果HTMLから判例IDを抽出する
+ * 各行の th 直下にある a 要素の href から5桁のIDを取り出す
+ * href の形式: ./../{ID}/detail2/index.html
  * @param {string} html
  * @returns {string[]}
  */
@@ -156,11 +164,15 @@ const extractIds = (html) => {
     .build();
 
   const ids = [];
-  const pattern = /href="\.\/\.\.\/([\d]{5})\/detail2\/index\.html"/g;
-  let match;
-  while ((match = pattern.exec(tableHtml))) {
+  const thBlocks = Parser.data(tableHtml).from("<th>").to("</th>").iterate();
+
+  for (const thHtml of thBlocks) {
+    const href = Parser.data(thHtml).from("<a").from('href="').to('"').build();
+    const match = href.match(/\/([\d]{5})\/detail2\/index\.html$/);
+    if (!match) continue;
     ids.push(match[1]);
   }
+
   return ids;
 };
 
