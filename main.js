@@ -8,9 +8,9 @@ const FIELD_COLUMNS = [
   { metaName: "composite_jiken_number", column: 2 },
   { metaName: "jiken_name", column: 3 },
   { metaName: "judge_date_wareki", column: 4 },
-  { metaName: "court_name", column: 5 },
-  { metaName: "judge_type_name", column: 6 },
-  { metaName: "note_1", column: 7 },
+  { metaName: "court_name", column: 6 },
+  { metaName: "judge_type_name", column: 7 },
+  { metaName: "note_1", column: 8 },
 ];
 
 // =====================
@@ -96,6 +96,23 @@ const dateToWareki = (date) => {
   };
 };
 
+/**
+ * 和暦文字列をyyyy-MM-dd形式に変換する
+ * "令和7年3月15日" → "2025-03-15"
+ * @param {string} warekiStr
+ * @returns {string} 変換できない場合は空文字
+ */
+const warekiToIso = (warekiStr) => {
+  const match = warekiStr.match(/令和([0-9]+)年([0-9]+)月([0-9]+)日/);
+  if (!match) return "";
+
+  const [, year, month, day] = match.map(Number);
+  const yyyy = year + 2018;
+  const MM = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  return `${yyyy}-${MM}-${dd}`;
+};
+
 // =====================
 // URL組み立て
 // =====================
@@ -164,11 +181,11 @@ const extractIds = (html) => {
     .build();
 
   const ids = [];
-  const thBlocks = Parser.data(tableHtml).from("<th>").to("</th>").iterate();
+  const thBlocks = Parser.data(tableHtml).from("<th >").to("</th>").iterate();
 
   for (const thHtml of thBlocks) {
     const href = Parser.data(thHtml).from("<a").from('href="').to('"').build();
-    const match = href.match(/\/([\d]{5})\/detail2\/index\.html$/);
+    const match = href.match(/\/([0-9]{5})\/detail[0-9]\/index\.html$/);
     if (!match) continue;
     ids.push(match[1]);
   }
@@ -235,12 +252,17 @@ const processId = (sheet, id) => {
 
   const metaMap = extractMetaMap(html);
   const nextRow = sheet.getLastRow() + 1;
-  const row = new Array(FIELD_COLUMNS.length + 1).fill("");
+  const maxColumn = Math.max(...FIELD_COLUMNS.map((f) => f.column));
+  const row = new Array(maxColumn).fill("");
 
   row[0] = id;
   for (const { metaName, column } of FIELD_COLUMNS) {
     row[column - 1] = metaMap[metaName] ?? "";
   }
+
+  // D列(index=3): judge_date_wareki を yyyy-MM-dd に正規化
+  const warekiRaw = metaMap["judge_date_wareki"] ?? "";
+  row[4] = warekiToIso(warekiRaw);
 
   sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
   console.log(`追記: ${id}`);
