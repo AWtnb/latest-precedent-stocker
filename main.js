@@ -5,12 +5,13 @@ const PAGE_SIZE = 30;
 
 /** @type {Array<{metaName: string, column: number}>} */
 const FIELD_COLUMNS = [
-  { metaName: "composite_jiken_number", column: 2 },
-  { metaName: "jiken_name", column: 3 },
-  { metaName: "judge_date_wareki", column: 4 },
+  { metaName: "composite_jiken_number", column: 3 },
+  { metaName: "jiken_name", column: 4 },
+  { metaName: "judge_date_wareki", column: 5 },
   { metaName: "court_name", column: 6 },
-  { metaName: "judge_type_name", column: 7 },
-  { metaName: "note_1", column: 8 },
+  { metaName: "branch_name", column: 7 },
+  { metaName: "judge_type_name", column: 8 },
+  { metaName: "note_1", column: 9 },
 ];
 
 // =====================
@@ -256,13 +257,14 @@ const processId = (sheet, id) => {
   const row = new Array(maxColumn).fill("");
 
   row[0] = id;
-  for (const { metaName, column } of FIELD_COLUMNS) {
-    row[column - 1] = metaMap[metaName] ?? "";
-  }
 
   // D列(index=3): judge_date_wareki を yyyy-MM-dd に正規化
   const warekiRaw = metaMap["judge_date_wareki"] ?? "";
-  row[4] = warekiToIso(warekiRaw);
+  row[1] = warekiToIso(warekiRaw);
+
+  for (const { metaName, column } of FIELD_COLUMNS) {
+    row[column - 1] = metaMap[metaName] ?? "";
+  }
 
   sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
   console.log(`追記: ${id}`);
