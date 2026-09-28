@@ -1,11 +1,9 @@
-const BASE_DETAIL_URL =
-  "https://www.courts.go.jp/hanrei/{ID}/detail2/index.html";
 const BASE_SEARCH_URL = "https://www.courts.go.jp/hanrei/search1/index.html";
 const PAGE_SIZE = 30;
 
 const main = () => {
   const { fromDate, toDate } = getDateRange();
-  const existingIds = getExistingIds(MAIN_SHEET);
+  const existingUrls = getExistingIds(MAIN_SHEET);
 
   const firstUrl = buildSearchUrl(fromDate, toDate, 0);
   const firstHtml = UrlFetchApp.fetch(firstUrl).getContentText("UTF-8");
@@ -27,15 +25,15 @@ const main = () => {
         : UrlFetchApp.fetch(
             buildSearchUrl(fromDate, toDate, offset),
           ).getContentText("UTF-8");
-    const ids = extractIds(html);
+    const urls = extractUrls(html);
 
-    for (const id of ids) {
-      if (existingIds.has(id)) {
-        console.log(`スキップ: ${id}`);
+    for (const url of urls) {
+      if (existingUrls.has(url)) {
+        console.log(`スキップ: ${url}`);
         continue;
       }
-      processId(MAIN_SHEET, id);
-      existingIds.add(id);
+      processDetailPage(MAIN_SHEET, url);
+      existingUrls.add(url);
       Utilities.sleep(1000);
     }
   }
@@ -109,35 +107,32 @@ const fetchTotalCount = (html) => {
 };
 
 /**
- * 検索結果HTMLから判例IDを抽出する
+ * 検索結果HTMLから各判例のURLを抽出する
  * 各行の th 直下にある a 要素の href から5桁のIDを取り出す
- * href の形式: ./../{ID}/detail2/index.html
  * @param {string} html
  * @returns {string[]}
  */
-const extractIds = (html) => {
+const extractUrls = (html) => {
   const tableHtml = Parser.data(html)
     .from('<table class="module-sub-page-fixed-table search-result-table">')
     .to("</table>")
     .build();
 
-  const ids = [];
+  const urls = [];
   const thBlocks = Parser.data(tableHtml).from("<th >").to("</th>").iterate();
 
   for (const thHtml of thBlocks) {
     const href = Parser.data(thHtml).from("<a").from('href="').to('"').build();
-    const match = href.match(/\/([0-9]{5})\/detail[0-9]\/index\.html$/);
-    if (!match) continue;
-    ids.push(match[1]);
+    if (!href) continue;
+    urls.push(`https://www.courts.go.jp/hanrei/${href.slice(5)}`);
   }
 
-  return ids;
+  return urls;
 };
 
 /**
  * HTML内の <meta name="xxx" content="yyy"> からnameをキー、contentを値とするマップを作る
- * ページ本体はJavaScriptで動的に組み立てられるため要素の直接取得はできないが、
- * meta要素はサーバー側で埋め込まれるため確実に取得できる
+ * meta要素は確実かつ簡単に取得できるため
  * @param {string} html
  * @returns {Object<string, string>}
  */
@@ -190,10 +185,9 @@ const getExistingIds = (sheet) => {
 /**
  * 個別ページにアクセスしてメタ情報を取得し、シートに1行追記する
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
- * @param {string} id
+ * @param {string} url
  */
-const processId = (sheet, id) => {
-  const url = BASE_DETAIL_URL.replace("{ID}", id);
+const processDetailPage = (sheet, url) => {
   let html;
   try {
     html = UrlFetchApp.fetch(url).getContentText("UTF-8");
@@ -207,7 +201,7 @@ const processId = (sheet, id) => {
   const maxColumn = Math.max(...FIELD_COLUMNS.map((f) => f.column));
   const row = new Array(maxColumn).fill("");
 
-  row[0] = id;
+  row[0] = url;
 
   // D列(index=3): judge_date_wareki を yyyy-MM-dd に正規化
   const warekiRaw = metaMap["judge_date_wareki"] ?? "";
@@ -218,5 +212,5 @@ const processId = (sheet, id) => {
   }
 
   sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
-  console.log(`追記: ${id}`);
+  console.log(`追記: ${url}`);
 };
