@@ -1,19 +1,15 @@
-// =====================
-// 日付
-// =====================
-
 /**
- * 実行日の前日〜30日前の日付範囲を返す
+ * 実行日の前日~30日前の日付範囲を返す
+ * デバッグ時は引数で基準日を上書きできる
+ * @param {Date} [baseDate=new Date()]
  * @returns {{ fromDate: Date, toDate: Date }}
  */
-const getDateRange = () => {
-  const today = new Date();
+const getDateRange = (baseDate = new Date()) => {
+  const toDate = new Date(baseDate);
+  toDate.setDate(baseDate.getDate() - 1);
 
-  const toDate = new Date(today);
-  toDate.setDate(today.getDate() - 1);
-
-  const fromDate = new Date(today);
-  fromDate.setDate(today.getDate() - 30);
+  const fromDate = new Date(baseDate);
+  fromDate.setDate(baseDate.getDate() - 30);
 
   return { fromDate, toDate };
 };
