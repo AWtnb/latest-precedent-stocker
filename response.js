@@ -34,6 +34,7 @@ const onFormSubmit = (e) => {
   const rows = MAIN_SHEET.getDataRange().getValues();
 
   const filtered = rows.filter((row) => {
+    if (row[3] == "知的財産高等裁判所") return false;
     const rowDate = new Date(row[1]); // 2列目（0-indexed で index 1）
     return startDate <= rowDate && rowDate <= endDate;
   });
@@ -48,7 +49,7 @@ const onFormSubmit = (e) => {
   }
 
   const sorted = filtered.sort((a, b) => {
-    const rankDiff = getCourtRank(a[4]) - getCourtRank(b[4]); // 5列目が裁判所名
+    const rankDiff = getCourtRank(a[3]) - getCourtRank(b[3]);
     if (rankDiff !== 0) return rankDiff;
 
     // 審級が同じなら日付降順
@@ -79,6 +80,7 @@ const buildCsv = (rows) => {
   return rows
     .map((row) =>
       row
+        .filter((_, i) => i !== 1)
         .map((cell) => {
           const str = String(cell ?? "");
           // カンマ・ダブルクォート・改行を含むセルはクォートで囲む

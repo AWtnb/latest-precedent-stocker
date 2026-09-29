@@ -86,13 +86,13 @@ const buildSearchUrl = (fromDate, toDate, offset) => {
 
 /** @type {Array<{metaName: string, column: number}>} */
 const FIELD_COLUMNS = [
-  { metaName: "composite_jiken_number", column: 3 },
-  { metaName: "jiken_name", column: 4 },
-  { metaName: "judge_date_wareki", column: 5 },
-  { metaName: "court_name", column: 6 },
-  { metaName: "branch_name", column: 7 },
-  { metaName: "judge_type_name", column: 8 },
-  { metaName: "note_1", column: 9 },
+  { column: 3, metaName: "judge_date_wareki" },
+  { column: 4, metaName: "court_name" },
+  { column: 5, metaName: "branch_name" },
+  { column: 6, metaName: "judge_type_name" },
+  { column: 7, metaName: "composite_jiken_number" },
+  { column: 8, metaName: "jiken_name" },
+  { column: 9, metaName: "note_1" },
 ];
 
 /**
