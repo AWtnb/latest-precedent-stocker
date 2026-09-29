@@ -52,7 +52,7 @@ const dateToWareki = (date) => {
 const warekiToIso = (warekiStr) => {
   const match = warekiStr
     .replace("元年", "1年")
-    .match(/令和([0-9]+)年([0-9]+)月([0-9]+)日/);
+    .match(/([0-9]+)年([0-9]+)月([0-9]+)日/);
   if (!match) return "";
 
   const [, year, month, day] = match.map(Number);
