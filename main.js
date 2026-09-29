@@ -46,6 +46,64 @@ const main = () => {
 };
 
 // =====================
+// 日付処理
+// =====================
+
+/**
+ * 実行日の前日~30日前の日付範囲を返す
+ * デバッグ時は引数で基準日を上書きできる
+ * @param {Date} [baseDate=new Date()]
+ * @returns {{ fromDate: Date, toDate: Date }}
+ */
+const getDateRange = (baseDate = new Date()) => {
+  const toDate = new Date(baseDate);
+  toDate.setDate(baseDate.getDate() - 1);
+
+  const fromDate = new Date(baseDate);
+  fromDate.setDate(baseDate.getDate() - 30);
+
+  return { fromDate, toDate };
+};
+
+/** 令和の開始日 */
+const REIWA_START = new Date(2019, 4, 1); // 月は0始まり
+
+/**
+ * DateオブジェクトをURLパラメータ用の和暦オブジェクトに変換する
+ * 現状は令和のみ対応（2019年5月1日以降を前提）
+ * @param {Date} date
+ * @returns {{ gengo: string, year: number, month: number, day: number }}
+ */
+const dateToWareki = (date) => {
+  const reiwaYear = date.getFullYear() - REIWA_START.getFullYear() + 1;
+  return {
+    gengo: "令和",
+    year: reiwaYear,
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  };
+};
+
+/**
+ * 和暦文字列をyyyy-MM-dd形式に変換する
+ * "令和7年3月15日" → "2025-03-15"
+ * @param {string} warekiStr
+ * @returns {string} 変換できない場合は空文字
+ */
+const warekiToIso = (warekiStr) => {
+  const match = warekiStr
+    .replace("元年", "1年")
+    .match(/([0-9]+)年([0-9]+)月([0-9]+)日/);
+  if (!match) return "";
+
+  const [, year, month, day] = match.map(Number);
+  const yyyy = year + 2018;
+  const MM = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  return `${yyyy}-${MM}-${dd}`;
+};
+
+// =====================
 // URL組み立て
 // =====================
 
@@ -84,15 +142,14 @@ const buildSearchUrl = (fromDate, toDate, offset) => {
 // スクレイピング
 // =====================
 
-/** @type {Array<{metaName: string, column: number}>} */
 const FIELD_COLUMNS = [
-  { column: 3, metaName: "judge_date_wareki" },
-  { column: 4, metaName: "court_name" },
-  { column: 5, metaName: "branch_name" },
-  { column: 6, metaName: "judge_type_name" },
-  { column: 7, metaName: "composite_jiken_number" },
-  { column: 8, metaName: "jiken_name" },
-  { column: 9, metaName: "note_1" },
+  { column: COL.DATE_WAREKI, metaName: "judge_date_wareki" },
+  { column: COL.COURT_NAME, metaName: "court_name" },
+  { column: COL.BRANCH_NAME, metaName: "branch_name" },
+  { column: COL.JUDGE_TYPE, metaName: "judge_type_name" },
+  { column: COL.JIKEN_NUMBER, metaName: "composite_jiken_number" },
+  { column: COL.JIKEN_NAME, metaName: "jiken_name" },
+  { column: COL.NOTE_1, metaName: "note_1" },
 ];
 
 /**
@@ -151,6 +208,10 @@ const extractMetaMap = (html) => {
     metaMap[name] = content;
   }
 
+  if (!metaMap["branch_name"] || metaMap["branch_name"].trim().length < 1) {
+    metaMap["branch_name"] = metaMap["department_name"] ?? "";
+  }
+
   if (!metaMap["note_1"] || metaMap["note_1"].trim().length < 1) {
     // <dt>判示事項の要旨</dt> の直後の <dd> 内の <p> テキストを取得
     // [\s\S] で改行を含む任意文字にマッチさせる
@@ -205,11 +266,11 @@ const processDetailPage = (sheet, url) => {
   const maxColumn = Math.max(...FIELD_COLUMNS.map((f) => f.column));
   const row = new Array(maxColumn).fill("");
 
-  row[0] = url;
+  row[COL.URL - 1] = url;
 
   // D列(index=3): judge_date_wareki を yyyy-MM-dd に正規化
   const warekiRaw = metaMap["judge_date_wareki"] ?? "";
-  row[1] = warekiToIso(warekiRaw);
+  row[COL.DATE_ISO - 1] = warekiToIso(warekiRaw);
 
   for (const { metaName, column } of FIELD_COLUMNS) {
     row[column - 1] = metaMap[metaName] ?? "";

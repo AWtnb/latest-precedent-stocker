@@ -34,8 +34,8 @@ const onFormSubmit = (e) => {
   const rows = MAIN_SHEET.getDataRange().getValues();
 
   const filtered = rows.filter((row) => {
-    if (row[3] == "知的財産高等裁判所") return false;
-    const rowDate = new Date(row[1]); // 2列目（0-indexed で index 1）
+    if (row[COL.COURT_NAME - 1] == "知的財産高等裁判所") return false;
+    const rowDate = new Date(row[COL.DATE_ISO - 1]);
     return startDate <= rowDate && rowDate <= endDate;
   });
 
@@ -80,7 +80,7 @@ const buildCsv = (rows) => {
   return rows
     .map((row) =>
       row
-        .filter((_, i) => i !== 1)
+        .filter((_, i) => i !== COL.DATE_ISO - 1)
         .map((cell) => {
           const str = String(cell ?? "");
           // カンマ・ダブルクォート・改行を含むセルはクォートで囲む
