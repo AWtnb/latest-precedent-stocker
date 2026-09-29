@@ -57,17 +57,23 @@ const onFormSubmit = (e) => {
   });
 
   const csv = buildCsv(sorted);
-  const blob = Utilities.newBlob(
+  const csvBlob = Utilities.newBlob(
     "\uFEFF" + csv, // BOM付き UTF-8（Excelで文字化けしないよう）
     "text/csv",
     `hanrei_${startDateStr}_${endDateStr}.csv`,
+  );
+  const report = buildReport(sorted);
+  const txtBlob = Utilities.newBlob(
+    report,
+    "text/txt",
+    `hanrei_${startDateStr}_${endDateStr}.txt`,
   );
 
   MailApp.sendEmail({
     to: email,
     subject: `【判例データ】${startDateStr} 〜 ${endDateStr}`,
     body: `${startDateStr} 〜 ${endDateStr} の期間の判例データを添付します。\n該当件数: ${sorted.length} 件`,
-    attachments: [blob],
+    attachments: [csvBlob, txtBlob],
   });
 };
 
@@ -89,5 +95,27 @@ const buildCsv = (rows) => {
         })
         .join(","),
     )
+    .join("\r\n");
+};
+
+/**
+ * 2次元配列をテキストに変換する
+ * @param {any[][]} rows
+ * @returns {string}
+ */
+const buildReport = (rows) => {
+  return rows
+    .map((row) => {
+      const elems = row.map((cell) => String(cell ?? ""));
+      const branch = ` ${elems[COL.BRANCH_NAME - 1]}`.trimEnd();
+      const category = `　${elems[COL.CATEGORY - 1]}`.trimEnd();
+      return [
+        `${elems[COL.DATE_JP - 1]}　${elems[COL.COURT_NAME - 1]}${branch}${category}`,
+        `${elems[COL.CASE_NUMBER - 1]}　${elems[COL.CASE_NAME - 1]}`,
+        elems[COL.URL - 1],
+        `${elems[COL.DETAIL - 1]}`,
+        "",
+      ].join("\r\n");
+    })
     .join("\r\n");
 };

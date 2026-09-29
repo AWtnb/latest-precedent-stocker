@@ -143,13 +143,13 @@ const buildSearchUrl = (fromDate, toDate, offset) => {
 // =====================
 
 const FIELD_COLUMNS = [
-  { column: COL.DATE_WAREKI, metaName: "judge_date_wareki" },
+  { column: COL.DATE_JP, metaName: "judge_date_wareki" },
   { column: COL.COURT_NAME, metaName: "court_name" },
   { column: COL.BRANCH_NAME, metaName: "branch_name" },
-  { column: COL.JUDGE_TYPE, metaName: "judge_type_name" },
-  { column: COL.JIKEN_NUMBER, metaName: "composite_jiken_number" },
-  { column: COL.JIKEN_NAME, metaName: "jiken_name" },
-  { column: COL.NOTE_1, metaName: "note_1" },
+  { column: COL.CATEGORY, metaName: "judge_type_name" },
+  { column: COL.CASE_NUMBER, metaName: "composite_jiken_number" },
+  { column: COL.CASE_NAME, metaName: "jiken_name" },
+  { column: COL.DETAIL, metaName: "note_1" },
 ];
 
 /**
