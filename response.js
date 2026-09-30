@@ -20,10 +20,14 @@ const getCourtRank = (courtName) => {
 const onFormSubmit = (e) => {
   const responses = e.response.getItemResponses();
 
-  // フォームの回答を取得（順番依存）
-  const startDateStr = responses[0].getResponse(); // 開始日 (YYYY-MM-DD)
-  const endDateStr = responses[1].getResponse(); // 終了日 (YYYY-MM-DD)
-  const email = responses[2].getResponse(); // メールアドレス
+  const find = (title) =>
+    responses.find((r) => r.getItem().getTitle() === title);
+
+  // フォームの回答を取得
+  const startDateStr = find("開始日").getResponse(); // YYYY-MM-DD
+  const endDateStr = find("終了日").getResponse(); // YYYY-MM-DD
+  const email = find("データの送信先アドレス").getResponse();
+  const precFilter = find("フィルタ").getResponse();
 
   const startDate = new Date(startDateStr);
   const endDate = new Date(endDateStr);
@@ -34,7 +38,13 @@ const onFormSubmit = (e) => {
   const rows = MAIN_SHEET.getDataRange().getValues();
 
   const filtered = rows.filter((row) => {
-    if (row[COL.COURT_NAME - 1] == "知的財産高等裁判所") return false;
+    if (precFilter.startsWith("法学教室方式")) {
+      // 判示事項が空欄ならスキップ
+      if (row[COL.DETAIL - 1].length < 1) return false;
+      // URLに `detail7` を含む（=検索結果の見出しが「知的財産裁判例」）ならスキップ
+      if (row[COL.URL - 1].includes("detail7")) return false;
+    }
+
     const rowDate = new Date(row[COL.DATE_ISO - 1]);
     return startDate <= rowDate && rowDate <= endDate;
   });
