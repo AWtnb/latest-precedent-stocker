@@ -13,9 +13,15 @@ Googleフォームからメールアドレスと日付範囲を入力すると�
 使用ツール：[clasp](https://github.com/google/clasp)
 
 1. `npm install`
-1. Googleドライブ上にフォームを作成し、右上のメニューからスクリプトを作成。URLからIDを取得する
-1. Googleドライブ上に空のスプレッドシートを作成し、URLからIDを取得する
-1. スクリプトIDで `clasp clone （スクリプトID）`
+1. Googleドライブ上にフォームを作成し、右上のメニューからスクリプトを作成。URLからスクリプトIDを取得する
+1. `.clasp.json` を以下の内容で作成して `（スクリプトID）` を書き換える
+
+    ```json
+    {
+      "scriptId": "（スクリプトID）",
+    }
+    ```
+
 1. `clasp push` でローカルの変更をGASエディタに反映
 1. `clasp open-script` でGASエディタを開く
 1. スクリプトプロパティに `SHEET_ID` のキーでシートIDを登録しておく
