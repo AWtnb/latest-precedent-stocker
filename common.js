@@ -18,4 +18,5 @@ const COL = {
   CASE_NUMBER: 7, // G: 事件番号
   CASE_NAME: 8, // H: 事件名
   DETAIL: 9, // I: 判示事項要旨
+  LAST_UPDATE: 10, // J: 最終更新日
 };

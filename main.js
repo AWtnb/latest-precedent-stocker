@@ -276,6 +276,8 @@ const processDetailPage = (sheet, url) => {
     row[column - 1] = metaMap[metaName] ?? "";
   }
 
+  row[COL.LAST_UPDATE - 1] = new Date();
+
   sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
   console.log(`追記: ${url}`);
 };
